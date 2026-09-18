@@ -1,0 +1,91 @@
+# ========================================
+# IDE
+# ========================================
+
+.idea/
+*.iml
+
+.vscode/
+
+.classpath
+.project
+.settings/
+
+
+# ========================================
+# OS
+# ========================================
+
+.DS_Store
+Thumbs.db
+
+
+# ========================================
+# Environment Variables
+# ========================================
+
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+
+# ========================================
+# Backend - Spring Boot / Java
+# ========================================
+
+.gradle/
+build/
+
+target/
+
+*.class
+
+*.log
+spring.log
+
+
+# ========================================
+# Frontend - React
+# ========================================
+
+node_modules/
+
+dist/
+
+.vite/
+.next/
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# ========================================
+# Test / Coverage
+# ========================================
+
+coverage/
+.nyc_output/
+
+
+# ========================================
+# Temporary files
+# ========================================
+
+*.tmp
+*.temp
+
+
+# ========================================
+# IntelliJ / Database Tools
+# ========================================
+
+/shelf/
+/.idea/workspace.xml
+/httpRequests/
+/queries/
+/dataSources/
+/dataSources.local.xml
