@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRightIcon, ClockIcon } from 'lucide-react';
 import { sessionList, type SessionListResponse } from '../api/counsel';
+import { formatTag } from '../utils/tags';
 import { viewClient } from '../api/clients';
 import { Tag } from '../components/Tag';
 import MASCOT from '../assets/mascot.jpg';
@@ -106,7 +107,7 @@ export function Home() {
 
                 <div className="mt-3.5 flex flex-wrap gap-1.5">
                   {s.client.tags.map((t) => (
-                    <Tag key={t}>{t}</Tag>
+                    <Tag key={t}>{formatTag(t)}</Tag>
                   ))}
                 </div>
 

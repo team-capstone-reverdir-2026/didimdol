@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ClipboardListIcon, NotebookPenIcon, SendIcon } from 'lucide-react';
 import { makeCounsels, sessionMessage, sessionComplete, viewMemo, type ChatMessage } from '../api/counsel';
 import { viewClient, type ViewClientResponse } from '../api/clients';
+import { formatTag } from '../utils/tags';
 import { Logo } from '../components/Logo';
 import { Tag } from '../components/Tag';
 import { Modal } from '../components/Modal';
@@ -11,6 +12,27 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MemoPanel } from '../components/MemoPanel';
 import { useCounselStream } from '../hooks/useCounselStream';
 import MASCOT from '../assets/mascot.jpg';
+import manNeutral from '../assets/ljh/man_neutral.png';
+import manHappy from '../assets/ljh/man_happy.png';
+import manSad from '../assets/ljh/man_sad.png';
+import manAngry from '../assets/ljh/man_angry.png';
+import womanNeutral from '../assets/psy/woman_neutral.png';
+import womanHappy from '../assets/psy/woman_happy.png';
+import womanSad from '../assets/psy/woman_sad.png';
+import womanAngry from '../assets/psy/woman_angry.png';
+
+type Emotion = 'NEUTRAL' | 'HAPPY' | 'SAD' | 'ANGRY';
+
+function getClientStanding(clientId: number, emotion: Emotion): string {
+  // 추후 백엔드 imageUrl 연동 시 이 함수 대신 API 응답 사용
+  if (clientId === 1) {
+    return { NEUTRAL: manNeutral, HAPPY: manHappy, SAD: manSad, ANGRY: manAngry }[emotion];
+  }
+  if (clientId === 2) {
+    return { NEUTRAL: womanNeutral, HAPPY: womanHappy, SAD: womanSad, ANGRY: womanAngry }[emotion];
+  }
+  return '';
+}
 
 function format(total: number) {
   const m = Math.floor(total / 60);
@@ -31,7 +53,7 @@ export function Session() {
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
-  const [remaining, setRemaining] = useState(60 * 60);
+  const [remaining, setRemaining] = useState(30 * 60);
   const [panel, setPanel] = useState<'intake' | 'memo' | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [finished, setFinished] = useState(false);
@@ -39,23 +61,9 @@ export function Session() {
   const [memo, setMemo] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
 
-  // 세션 시작
+  // 내담자 정보 로드 (세션 시작 전)
   useEffect(() => {
-    const startAt = new Date().toISOString();
-    makeCounsels({ clientId: Number(clientId), initialMessage: '', startAt })
-      .then(async res => {
-        const d = res.data;
-        setSessionId(d.sessionId);
-        setSseTicket(d.sseTicket);
-        setCounselNo(d.counselNo);
-        setSessionRound(d.sessionRound);
-        setNickname(d.nickname);
-
-        if (d.previousMemo) setMemo(d.previousMemo);
-
-        const clientRes = await viewClient(Number(clientId));
-        setClientDetail(clientRes.data);
-      });
+    viewClient(Number(clientId)).then(res => setClientDetail(res.data));
   }, [clientId]);
 
   // 메모 로드
@@ -66,10 +74,12 @@ export function Session() {
     });
   }, [sessionId]);
 
-  const { aiContent, isCompleted, lastCompletedMessage, clearChat } = useCounselStream({
+  const { aiContent, currentEmotion, isCompleted, lastCompletedMessage, clearChat } = useCounselStream({
     sessionId,
     sseTicket,
   });
+
+  const standingImage = getClientStanding(Number(clientId), currentEmotion);
 
   // AI 문장 완성 시 messages에 추가
   useEffect(() => {
@@ -101,11 +111,26 @@ export function Session() {
 
   const send = async () => {
     const text = draft.trim();
-    if (!text || !sessionId) return;
+    if (!text) return;
     setDraft('');
     setMessages(prev => [...prev, { id: `c${prev.length}`, from: 'counselor', text }]);
     setThinking(true);
-    await sessionMessage(sessionId, { message: text });
+
+    if (!sessionId) {
+      // 첫 메시지 → initialMessage로 makeCounsels 호출
+      const startAt = new Date().toISOString();
+      const res = await makeCounsels({ clientId: Number(clientId), initialMessage: text, startAt });
+      const d = res.data;
+      setSessionId(d.sessionId);
+      setSseTicket(d.sseTicket);
+      setCounselNo(d.counselNo);
+      setSessionRound(d.sessionRound);
+      setNickname(d.nickname);
+      if (d.previousMemo) setMemo(d.previousMemo);
+    } else {
+      // 이후 메시지 → sessionMessage 호출
+      await sessionMessage(sessionId, { message: text });
+    }
   };
 
   const handleConfirmEnd = async () => {
@@ -168,58 +193,90 @@ export function Session() {
             <div className="mt-5 w-full text-center">
               <p className="text-lg font-bold text-ink">{clientDetail?.clientName}</p>
               <div className="mt-3 flex flex-wrap justify-center gap-1.5">
-                {clientDetail?.tags.map(t => <Tag key={t}>{t}</Tag>)}
+                {clientDetail?.tags.map(t => <Tag key={t}>{formatTag(t)}</Tag>)}
               </div>
             </div>
           </div>
 
           <div className="flex min-w-0 flex-1 flex-col">
-            <div className="min-h-0 flex-1 overflow-y-auto scroll-slim px-8 py-8">
-              <ul className="mx-auto flex max-w-2xl flex-col gap-5">
-                {messages.map(m => (
-                  <li key={m.id} className={m.from === 'client' ? 'flex justify-start' : 'flex justify-end'}>
-                    <motion.div
-                      initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
-                      className={`max-w-[80%] rounded-2xl px-5 py-4 text-[0.95rem] leading-relaxed ${
-                        m.from === 'client'
-                          ? 'rounded-tl-md border border-line bg-white text-ink'
-                          : 'rounded-tr-md bg-brand-600 text-white'
-                      }`}>
-                      {m.text}
-                    </motion.div>
-                  </li>
-                ))}
+            <div className="relative min-h-0 flex-1">
 
-                {/* 스트리밍 중인 AI 발화 */}
-                <AnimatePresence>
-                  {aiContent && (
-                    <motion.li
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="flex justify-start">
-                      <div className="max-w-[80%] rounded-2xl rounded-tl-md border border-line bg-white px-5 py-4 text-[0.95rem] leading-relaxed text-ink">
-                        {aiContent}
-                      </div>
-                    </motion.li>
-                  )}
-                  {thinking && !aiContent && (
-                    <motion.li
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15, ease: 'easeOut' }}
-                      className="flex justify-start">
-                      <span className="rounded-2xl rounded-tl-md border border-line bg-white px-5 py-4 text-sm text-ink-muted">
-                        {clientDetail?.clientName ?? '내담자'}님이 답변을 고르고 있어요…
-                      </span>
-                    </motion.li>
-                  )}
-                </AnimatePresence>
-              </ul>
-              <div ref={endRef} />
+              {/* 스탠딩 이미지 */}
+              {standingImage && (
+                <div className="pointer-events-none absolute inset-y-0 left-0 z-[1] hidden w-[18rem] sm:block md:w-[20rem] lg:w-[22rem]">
+                  <img
+                    src={standingImage}
+                    alt={`${clientDetail?.clientName ?? ''} 내담자`}
+                    draggable={false}
+                    className="absolute bottom-0 left-0 h-[96%] w-auto max-w-[145%] select-none object-contain object-left-bottom" />
+                </div>
+              )}
+
+              <div
+                className={`relative z-[2] h-full overflow-y-auto scroll-slim px-8 ${
+                  standingImage
+                    ? 'pt-[min(9rem,22%)] pb-8 sm:pl-[18rem] md:pl-[20rem] lg:pl-[22rem]'
+                    : 'py-8'
+                }`}>
+                <ul className={`flex max-w-2xl flex-col gap-5 ${standingImage ? 'mr-auto' : 'mx-auto'}`}>
+                  {messages.map(m => (
+                    <li key={m.id} className={m.from === 'client' ? 'flex justify-start' : 'flex justify-end'}>
+                      <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
+                        className={`relative px-5 py-4 text-[0.95rem] leading-relaxed ${
+                          m.from === 'client'
+                            ? `rounded-2xl rounded-bl-md border border-line bg-white text-ink ${
+                                standingImage ? 'max-w-sm' : 'max-w-[80%] rounded-tl-md'
+                              }`
+                            : 'max-w-[80%] rounded-2xl rounded-tr-md bg-brand-600 text-white'
+                        }`}>
+                        {m.from === 'client' && standingImage && (
+                          <span
+                            aria-hidden="true"
+                            className="absolute -left-[6px] top-6 h-3 w-3 rotate-45 border-b border-l border-line bg-white" />
+                        )}
+                        {m.text}
+                      </motion.div>
+                    </li>
+                  ))}
+
+                  {/* 스트리밍 중인 AI 발화 */}
+                  <AnimatePresence>
+                    {aiContent && (
+                      <motion.li
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex justify-start">
+                        <div className={`relative px-5 py-4 text-[0.95rem] leading-relaxed rounded-2xl rounded-bl-md border border-line bg-white text-ink ${standingImage ? 'max-w-sm' : 'max-w-[80%] rounded-tl-md'}`}>
+                          {standingImage && (
+                            <span aria-hidden="true" className="absolute -left-[6px] top-6 h-3 w-3 rotate-45 border-b border-l border-line bg-white" />
+                          )}
+                          {aiContent}
+                        </div>
+                      </motion.li>
+                    )}
+                    {thinking && !aiContent && (
+                      <motion.li
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15, ease: 'easeOut' }}
+                        className="flex justify-start">
+                        <span className={`relative rounded-2xl rounded-bl-md border border-line bg-white px-5 py-4 text-sm text-ink-muted ${standingImage ? '' : 'rounded-tl-md'}`}>
+                          {standingImage && (
+                            <span aria-hidden="true" className="absolute -left-[6px] top-5 h-3 w-3 rotate-45 border-b border-l border-line bg-white" />
+                          )}
+                          {clientDetail?.clientName ?? '내담자'}님이 답변을 고르고 있어요…
+                        </span>
+                      </motion.li>
+                    )}
+                  </AnimatePresence>
+                </ul>
+                <div ref={endRef} />
+              </div>
             </div>
 
             <div className="shrink-0 border-t border-line bg-white px-8 py-5">
@@ -272,7 +329,7 @@ export function Session() {
                 <dd className="font-medium text-ink">{clientDetail.clientName}</dd>
               </dl>
               <div className="mt-4 flex flex-wrap gap-1.5">
-                {clientDetail.tags.map(t => <Tag key={t}>{t}</Tag>)}
+                {clientDetail.tags.map(t => <Tag key={t}>{formatTag(t)}</Tag>)}
               </div>
               <div className="mt-6 space-y-5">
                 <IntakeBlock label="신청 경위" value={clientDetail.referralReason} />
@@ -316,7 +373,7 @@ export function Session() {
           <div className="mt-6 rounded-2xl bg-brand-50 py-6">
             <p className="text-xs font-semibold text-brand-700">총 진행 시간</p>
             <p className="mt-1.5 text-4xl font-black tabular-nums text-brand-700">
-              {format(60 * 60 - remaining)}
+              {format(30 * 60 - remaining)}
             </p>
           </div>
 
