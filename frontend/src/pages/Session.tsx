@@ -251,7 +251,7 @@ export function Session() {
                   onClick={send}
                   aria-label="발화 전송"
                   className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand-600 text-white transition-colors duration-150 ease-out hover:bg-brand-700">
-                  <SendIcon className="h-4.5 w-4.5" />
+                  <SendIcon className="h-[1.125rem] w-[1.125rem]" />
                 </button>
                 <button
                   type="button"

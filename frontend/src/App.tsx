@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
 import { Login } from './pages/Login';
 import { SignUp } from './pages/SignUp';
-import { Onboarding } from './pages/Onboarding';
 import { Home } from './pages/Home';
 import { Clients } from './pages/Clients';
 import { Session } from './pages/Session';
@@ -22,7 +21,6 @@ export default function App() {
         {/* 인증 페이지 */}
         <Route path="/" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
-        <Route path="/onboarding" element={<Onboarding />} />
 
         {/* 상담 진행 (전체 화면, AppLayout 없음) */}
         <Route path="/session/:clientId" element={<Session />} />

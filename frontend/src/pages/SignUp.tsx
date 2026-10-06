@@ -11,14 +11,14 @@ const notices = [
 '이 서비스는 상담 수련 목적이며, 실제 상담·진단·치료를 대체할 수 없습니다.',
 'AI가 제공하는 요약·평가는 참고 자료이며, 슈퍼비전을 대신하지 않습니다.',
 '실제 내담자의 식별 정보를 입력하지 마세요.'];
-const [username, setUsername] = useState('');
-const [password, setPassword] = useState('');
-const [confirmPW, setConfirmPW] = useState('');
-const [nickname, setNickname] = useState('');
-const [error, setError] = useState('');
 
 
 export function SignUp() {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPW, setConfirmPW] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
@@ -44,7 +44,7 @@ export function SignUp() {
               setError('비밀번호가 일치하지 않습니다.');
               return;
             }
-            setError(' ');
+            setError('');
             setOpen(true);
           }}>
           

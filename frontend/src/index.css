@@ -1,111 +1,84 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+@import "tailwindcss";
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* END TAILWIND IMPORTS — ALL OTHER CSS MUST GO BELOW THIS LINE */
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+@theme {
+  /* Brand colors */
+  --color-brand-50: #F5F4FF;
+  --color-brand-100: #ECEAFE;
+  --color-brand-200: #D9D5FD;
+  --color-brand-300: #BCB4FA;
+  --color-brand-400: #9C8FF5;
+  --color-brand-500: #7C6AEE;
+  --color-brand-600: #6355E0;
+  --color-brand-700: #5044BC;
+  --color-brand-800: #382F87;
+  --color-brand-900: #231D57;
+
+  /* Ink colors */
+  --color-ink: #171827;
+  --color-ink-soft: #474A68;
+  --color-ink-muted: #767994;
+  --color-ink-faint: #A6A8C0;
+
+  /* Surface colors */
+  --color-canvas: #F7F7FC;
+  --color-line: #E7E6F2;
+
+  /* Marker colors */
+  --color-marker-yellow: #FFE7A0;
+  --color-marker-blue: #BFD4FF;
+  --color-marker-red: #FFC4D0;
+
+  /* Danger */
+  --color-danger: #D1476A;
+
+  /* Font family */
+  --font-family-sans: 'Noto Sans KR', system-ui, sans-serif;
+
+  /* Custom spacing */
+  --spacing-4_5: 1.125rem;
+
+  /* Border radius */
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.75rem;
+
+  /* Shadows */
+  --shadow-card: 0 1px 2px rgba(35, 29, 87, 0.04), 0 10px 30px -18px rgba(35, 29, 87, 0.22);
+  --shadow-pop: 0 28px 70px -24px rgba(35, 29, 87, 0.42);
+  --shadow-glow: 0 10px 24px -12px rgba(99, 85, 224, 0.55);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
+html,
+body,
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+  height: 100%;
 }
-
 body {
-  margin: 0;
+  background-color: #f7f7fc;
+  color: #171827;
+  font-family: 'Noto Sans KR', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  word-break: keep-all;
 }
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+::selection {
+  background: #d9d5fd;
 }
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
+*:focus-visible {
+  outline: 2px solid #6355e0;
+  outline-offset: 2px;
 }
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
+.scroll-slim::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
-p {
-  margin: 0;
+.scroll-slim::-webkit-scrollbar-thumb {
+  background: #d9d5fd;
+  border-radius: 999px;
 }
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+.scroll-slim::-webkit-scrollbar-track {
+  background: transparent;
 }
