@@ -1,0 +1,22 @@
+# application.yml
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: didimdol
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  jpa:
+    open-in-view: false
+
+jwt:
+  access-token-expiration-seconds: 3600
+  refresh-token-expiration-days: 14
+sse:
+  ticket-ttl-seconds: 2100
+anthropic:
+  api-key: ${ANTHROPIC_API_KEY:}
+  base-url: https://api.anthropic.com
+  version: "2023-06-01"
+  model: ${ANTHROPIC_MODEL:claude-sonnet-5-5}
+  max-tokens: 800
