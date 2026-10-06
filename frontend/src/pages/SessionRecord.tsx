@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowRightIcon, BarChart3Icon, FileTextIcon, NotebookPenIcon, SparklesIcon } from 'lucide-react';
 import { viewSession, viewMemo, type ViewSessionResponse } from '../api/counsel';
 import { viewClient, type ViewClientResponse } from '../api/clients';
+import { formatTag } from '../utils/tags';
 import { Tag } from '../components/Tag';
 import { Modal } from '../components/Modal';
 
@@ -91,7 +92,7 @@ export function SessionRecord() {
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-lg font-bold text-ink">{clientDetail.clientName}</p>
-            {clientDetail.tags.map(t => <Tag key={t}>{t}</Tag>)}
+            {clientDetail.tags.map(t => <Tag key={t}>{formatTag(t)}</Tag>)}
           </div>
           <p className="mt-1 text-sm text-ink-muted">
             {formatDate(session.createdAt)} · {session.sessionRound}회기

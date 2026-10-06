@@ -1,7 +1,9 @@
 import React from 'react';
+import logo from '../assets/logo.png';
+import mascot from '../assets/mascot.jpg';
 
-export const MASCOT = "../assets/mascot.png";
-export const LOGO_SRC = "../assets/logo.png";
+export const MASCOT = mascot;
+export const LOGO_SRC = logo;
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';

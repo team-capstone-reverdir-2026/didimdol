@@ -2,8 +2,17 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRightIcon } from 'lucide-react';
 import { clientList, viewClient, type ViewClientResponse, type ClientSummary } from '../api/clients';
+import { formatTag } from '../utils/tags';
 import { Tag } from '../components/Tag';
 import { Modal } from '../components/Modal';
+import manFace from '../assets/ljh/man_face.png';
+import womanFace from '../assets/psy/woman_face.png';
+
+function getClientFace(clientId: number): string {
+  if (clientId === 1) return manFace;
+  if (clientId === 2) return womanFace;
+  return '';
+}
 
 export function Clients() {
   const navigate = useNavigate();
@@ -34,14 +43,16 @@ export function Clients() {
             }}
             className="group flex w-full flex-col overflow-hidden rounded-2xl border border-line bg-white text-left shadow-card transition-colors duration-150 ease-out hover:border-brand-300">
             
-              <span className="block aspect-square w-full overflow-hidden bg-brand-50">
+              <span className="block aspect-square w-full overflow-hidden bg-brand-50 p-0">
+                {/* 임시: 로컬 이미지 사용. imageUrl 준비 후 아래 주석 해제하고 이 img 제거
+                <img src={c.imageUrl} alt={`${c.clientName} 내담자`}
+                  className="h-full w-full object-cover transition-transform duration-200 ease-out group-hover:scale-[1.03]" /> */}
                 <img
-                src={c.imageUrl}
-                alt={`${c.clientName} 내담자`}
-                className="h-full w-full object-cover transition-transform duration-200 ease-out group-hover:scale-[1.03]" />
-              
+                  src={getClientFace(c.clientId)}
+                  alt={`${c.clientName} 내담자`}
+                  className="h-full w-full object-contain transition-transform duration-200 ease-out group-hover:scale-[1.03]" />
               </span>
-              <span className="flex flex-1 flex-col p-5">
+              <span className="flex flex-1 flex-col p-3">
                 <span className="flex items-baseline gap-2">
                   <span className="text-base font-bold text-ink">{c.clientName}</span>
                   {/*<span className="text-xs text-ink-muted">
@@ -50,7 +61,7 @@ export function Clients() {
                 </span>
                 <span className="mt-3 flex flex-wrap gap-1.5">
                   {c.tags.map((t) =>
-                <Tag key={t}>{t}</Tag>
+                <Tag key={t}>{formatTag(t)}</Tag>
                 )}
                 </span>
                 <span className="mt-auto inline-flex items-center gap-1.5 pt-5 text-sm font-semibold text-brand-600">
@@ -72,10 +83,15 @@ export function Clients() {
         {selected &&
         <div>
             <div className="flex flex-col gap-6 sm:flex-row">
-              <img
-              src={selected.imageUrl}
-              alt={`${selected.clientName} 내담자`}
-              className="h-40 w-40 shrink-0 rounded-2xl object-cover" />
+              {/* 임시: 로컬 이미지 사용. imageUrl 준비 후 아래 주석 해제하고 이 img 제거
+              <img src={selected.imageUrl} alt={`${selected.clientName} 내담자`}
+                className="h-40 w-40 shrink-0 rounded-2xl object-cover" /> */}
+              <div className="flex h-40 w-40 shrink-0 items-center justify-center rounded-2xl bg-brand-50 p-5">
+                <img
+                  src={getClientFace(selected.clientId)}
+                  alt={`${selected.clientName} 내담자`}
+                  className="h-full w-full object-contain" />
+              </div>
             
               <div className="pt-1">
                 <h2 id="client-detail-title" className="text-2xl font-bold text-ink">
@@ -90,7 +106,7 @@ export function Clients() {
                 <div className="mt-4 flex flex-wrap gap-1.5">
                   {selected.tags.map((t) =>
                 <Tag key={t} tone="solid">
-                      {t}
+                      {formatTag(t)}
                     </Tag>
                 )}
                 </div>
