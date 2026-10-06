@@ -4,6 +4,14 @@ import { ArrowRightIcon, BarChart3Icon, FileTextIcon, NotebookPenIcon, SparklesI
 import { viewSession, viewMemo, type ViewSessionResponse } from '../api/counsel';
 import { viewClient, type ViewClientResponse } from '../api/clients';
 import { formatTag } from '../utils/tags';
+import manFace from '../assets/ljh/man_face.png';
+import womanFace from '../assets/psy/woman_face.png';
+
+function getClientFace(clientId: number): string {
+  if (clientId === 1) return manFace;
+  if (clientId === 2) return womanFace;
+  return '';
+}
 import { Tag } from '../components/Tag';
 import { Modal } from '../components/Modal';
 
@@ -88,7 +96,11 @@ export function SessionRecord() {
       </div>
 
       <section className="mt-7 flex flex-wrap items-center gap-6 rounded-2xl border border-line bg-white p-6 shadow-card">
-        <img src={clientDetail.imageUrl} alt="" className="h-14 w-14 rounded-full object-cover" />
+        {/* 임시: 로컬 이미지 사용. imageUrl 준비 후 아래 주석 해제하고 이 div/img 교체
+        <img src={clientDetail.imageUrl} alt="" className="h-14 w-14 rounded-full object-cover" /> */}
+        <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-brand-50">
+          <img src={getClientFace(clientDetail.clientId)} alt="" className="h-full w-full object-cover" />
+        </div>
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-lg font-bold text-ink">{clientDetail.clientName}</p>

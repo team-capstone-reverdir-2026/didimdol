@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRightIcon, ClockIcon } from 'lucide-react';
 import { sessionList, type SessionListResponse } from '../api/counsel';
+import { formatTag } from '../utils/tags';
 import { Tag } from '../components/Tag';
 
 type SessionItem = SessionListResponse['data']['sessions'][number];
@@ -63,7 +64,7 @@ export function History() {
                       </span>
                     </div>
                     <div className="flex flex-wrap gap-1.5 mt-1">
-                      {s.client.tags.map(t => <Tag key={t}>{t}</Tag>)}
+                      {s.client.tags.map(t => <Tag key={t}>{formatTag(t)}</Tag>)}
                     </div>
                     <div className="mt-2 flex items-center gap-3 text-xs text-ink-muted">
                       <span>{formatDate(s.createdAt)}</span>
