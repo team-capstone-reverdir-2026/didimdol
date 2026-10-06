@@ -1,0 +1,22 @@
+# docker-compose.yml (레포 루트)
+services:
+  postgres:
+    image: postgres:16
+    container_name: didimdol-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - didimdol-pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: didimdol-redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  didimdol-pgdata:
