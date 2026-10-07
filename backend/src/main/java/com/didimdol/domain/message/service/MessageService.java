@@ -8,6 +8,7 @@ import com.didimdol.domain.message.repository.MessageRepository;
 import com.didimdol.domain.session.entity.CounselSession;
 import com.didimdol.domain.session.enums.SessionStatus;
 import com.didimdol.domain.session.repository.CounselSessionRepository;
+import com.didimdol.domain.session.service.SessionTimeLimit;
 import com.didimdol.global.exception.BusinessException;
 import com.didimdol.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,9 @@ public class MessageService {
         }
         if (session.getStatus() != SessionStatus.IN_PROGRESS) {
             throw new BusinessException(ErrorCode.SESSION_NOT_IN_PROGRESS);
+        }
+        if (SessionTimeLimit.isExceeded(session)) {
+            throw new BusinessException(ErrorCode.SESSION_TIME_EXCEEDED);
         }
         if (clientReplyService.isGenerating(sessionId)) {
             throw new BusinessException(ErrorCode.CLIENT_RESPONDING);

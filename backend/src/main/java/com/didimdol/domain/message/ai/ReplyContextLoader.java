@@ -5,6 +5,8 @@ import com.didimdol.domain.message.entity.Message;
 import com.didimdol.domain.message.enums.Emotion;
 import com.didimdol.domain.message.enums.Speaker;
 import com.didimdol.domain.message.repository.MessageRepository;
+import com.didimdol.domain.persona.entity.PersonaMemory;
+import com.didimdol.domain.persona.repository.PersonaMemoryRepository;
 import com.didimdol.domain.session.entity.CounselSession;
 import com.didimdol.domain.session.repository.CounselSessionRepository;
 import com.didimdol.global.ai.ChatTurn;
@@ -21,6 +23,7 @@ public class ReplyContextLoader {
 
     private final CounselSessionRepository sessionRepository;
     private final MessageRepository messageRepository;
+    private final PersonaMemoryRepository memoryRepository;
     private final PromptAssembler promptAssembler;
 
     @Transactional(readOnly = true)
@@ -28,9 +31,14 @@ public class ReplyContextLoader {
         CounselSession session = sessionRepository.findById(sessionId).orElseThrow();
         Client client = session.getCounsel().getClient();
 
-        // TODO(Step 7): 2~3회기는 PersonaMemory.carryForwardText 를 넣는다
+        String carryForward = session.getSessionRound() > 1
+                ? memoryRepository.findBySessionCounselIdAndSessionSessionRound(
+                                session.getCounsel().getId(), session.getSessionRound() - 1)
+                        .map(PersonaMemory::getCarryForwardText)
+                        .orElse(null)
+                : null;
         String systemPrompt = promptAssembler.assemble(
-                client.getPersonaType(), client, session.getSessionRound(), null);
+                client.getPersonaType(), client, session.getSessionRound(), carryForward);
 
         List<Message> messages = messageRepository.findBySessionIdOrderBySeqAsc(sessionId);
         return new ReplyContext(systemPrompt, toTurns(messages));
