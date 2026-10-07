@@ -95,8 +95,8 @@ export const scheduleSilentRefresh = (expiresIn: number) => {
       });
 
       if (res.data.success) {
-        const { accessToken, refreshToken, expiresIn: newExpiresIn } = res.data.data;
-        
+        const { accessToken, refreshToken, expiresIn: newExpiresIn, expiresAt } = res.data.data;
+        localStorage.setItem('expiresAt', expiresAt);
         localStorage.setItem('accessToken', accessToken);
         if (refreshToken) {
           localStorage.setItem('refreshToken', refreshToken);
