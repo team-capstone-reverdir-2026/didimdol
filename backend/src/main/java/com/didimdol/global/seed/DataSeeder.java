@@ -33,6 +33,10 @@ public class DataSeeder implements ApplicationRunner {
 
     private PersonaType seedPersonaType(PersonaType seed) {
         return personaTypeRepository.findByType(seed.getType())
+                .map(existing -> {
+                    existing.syncPromptFields(seed);   // 더티체킹으로 UPDATE
+                    return existing;
+                })
                 .orElseGet(() -> {
                     log.info("Seeding persona type: {}", seed.getType());
                     return personaTypeRepository.save(seed);

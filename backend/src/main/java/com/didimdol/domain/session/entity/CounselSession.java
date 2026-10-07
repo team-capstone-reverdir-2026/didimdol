@@ -66,4 +66,9 @@ public class CounselSession extends BaseCreatedEntity {
         this.duration = duration;
         this.status = SessionStatus.COMPLETED;
     }
+
+    public void applyAiFeedback(String aiSummary, String aiAdvice) {
+        this.aiSummary = aiSummary;
+        this.aiAdvice = aiAdvice;
+    }
 }

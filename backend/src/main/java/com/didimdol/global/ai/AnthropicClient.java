@@ -73,6 +73,36 @@ public class AnthropicClient {
                 });
     }
 
+    /** 비스트리밍 1회 호출 (Job 2 요약 등 구조화 출력용). 모델이 생성한 텍스트 전체를 돌려준다 */
+    public String complete(String system, List<ChatTurn> turns, int maxTokens) {
+        if (properties.apiKey() == null || properties.apiKey().isBlank()) {
+            throw new IllegalStateException("ANTHROPIC_API_KEY 가 설정되지 않았습니다.");
+        }
+        MessagesRequest body = new MessagesRequest(properties.model(), maxTokens, system, turns, false);
+        String raw = restClient.post()
+                .uri("/v1/messages")
+                .header("x-api-key", properties.apiKey())
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .body(body)
+                .retrieve()
+                .body(String.class);
+        try {
+            MessagesResponse response = jsonMapper.readValue(raw, MessagesResponse.class);
+            StringBuilder sb = new StringBuilder();
+            if (response.content() != null) {
+                for (ContentBlock block : response.content()) {
+                    if ("text".equals(block.type()) && block.text() != null) {
+                        sb.append(block.text());
+                    }
+                }
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            throw new IllegalStateException("Anthropic 응답 파싱 실패", e);
+        }
+    }
+
     private void readStream(InputStream in, Consumer<String> onText) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
         String line;
@@ -129,4 +159,10 @@ public class AnthropicClient {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record ErrorBody(String type, String message) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record MessagesResponse(List<ContentBlock> content) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record ContentBlock(String type, String text) {}
 }

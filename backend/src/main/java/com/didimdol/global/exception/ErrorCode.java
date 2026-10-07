@@ -19,7 +19,9 @@ public enum ErrorCode {
     COUNSEL_ALREADY_COMPLETED(HttpStatus.CONFLICT, "이미 모든 회기가 종료된 상담입니다."),
     PREVIOUS_SESSION_NOT_COMPLETED(HttpStatus.CONFLICT, "이전 회기가 아직 종료되지 않았습니다."),
     SESSION_NOT_IN_PROGRESS(HttpStatus.CONFLICT, "이미 종료된 회기입니다."),
-    CLIENT_RESPONDING(HttpStatus.CONFLICT, "내담자가 응답 중입니다. 잠시 후 다시 시도해주세요."),;
+    CLIENT_RESPONDING(HttpStatus.CONFLICT, "내담자가 응답 중입니다. 잠시 후 다시 시도해주세요."),
+    SESSION_TIME_EXCEEDED(HttpStatus.CONFLICT, "상담 시간(30분)이 종료되었습니다."),
+    DUPLICATE_REQUEST(HttpStatus.CONFLICT, "동일한 요청이 동시에 처리되었습니다. 다시 시도해주세요.");
 
     private final HttpStatus status;
     private final String message;

@@ -60,6 +60,23 @@ public class SessionService {
         return new SessionCompleteResponse(duration, counselCompleted);
     }
 
+    /** 제한 시간 초과 회기를 서버가 종료한다 (메모는 마지막 저장값 유지, 종료 시각은 제한 시간 기준) */
+    @Transactional
+    public void autoComplete(Long sessionId) {
+        CounselSession session = sessionRepository.findById(sessionId).orElseThrow();
+        if (session.getStatus() != SessionStatus.IN_PROGRESS || clientReplyService.isGenerating(sessionId)) {
+            return;
+        }
+        long limitSeconds = SessionTimeLimit.LIMIT.getSeconds();
+        session.complete(session.getMemo(), session.getStartAt().plusSeconds(limitSeconds), limitSeconds);
+
+        boolean counselCompleted = session.getSessionRound() >= FINAL_ROUND;
+        if (counselCompleted) {
+            session.getCounsel().complete();
+        }
+        eventPublisher.publishEvent(new SessionCompletedEvent(sessionId, counselCompleted));
+    }
+
     @Transactional(readOnly = true)
     public SessionDetailResponse getDetail(Long memberId, Long sessionId) {
         CounselSession session = sessionAccessor.getOwnedSession(memberId, sessionId);

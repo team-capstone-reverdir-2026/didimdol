@@ -53,4 +53,13 @@ public class PersonaType extends BaseTimeEntity {
         this.outputFormatRules = outputFormatRules;
     }
 
+    /** 시드(소스 코드)가 기준값이므로, 프롬프트 설정 변경을 기존 행에 반영한다 */
+    public void syncPromptFields(PersonaType seed) {
+        this.coreBelief = seed.coreBelief;
+        this.reactionRules = seed.reactionRules;
+        this.speechStyle = seed.speechStyle;
+        this.disclosureLogic = seed.disclosureLogic;
+        this.prohibitions = seed.prohibitions;
+        this.outputFormatRules = seed.outputFormatRules;
+    }
 }

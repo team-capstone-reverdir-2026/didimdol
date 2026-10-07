@@ -57,6 +57,6 @@ public class MessageRecorder {
     }
 
     public static long elapsedSeconds(CounselSession session) {
-        return Math.max(0, Duration.between(session.getStartAt(), LocalDateTime.now()).toSeconds());
+        return Math.max(0, Duration.between(session.getCreatedAt(), LocalDateTime.now()).toSeconds());
     }
 }

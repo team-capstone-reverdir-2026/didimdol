@@ -27,4 +27,7 @@ public interface CounselSessionRepository extends JpaRepository<CounselSession, 
                                           @Param("status") SessionStatus status,
                                           @Param("cursor") Long cursor,
                                           Pageable pageable);
+
+    /** 제한 시간을 넘겼는데 아직 종료되지 않은 회기 (자동 종료 대상) */
+    List<CounselSession> findByStatusAndCreatedAtBefore(SessionStatus status, java.time.LocalDateTime threshold);
 }
