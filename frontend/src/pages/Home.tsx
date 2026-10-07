@@ -5,7 +5,7 @@ import { sessionList, type SessionListResponse } from '../api/counsel';
 import { formatTag } from '../utils/tags';
 import { viewClient } from '../api/clients';
 import { Tag } from '../components/Tag';
-import MASCOT from '../assets/mascot.jpg';
+import MASCOT from '../assets/mascot.png';
 
 type SessionItem = SessionListResponse['data']['sessions'][number];
 
