@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { type ClientInfo } from '../api/counsel';
 
 export interface SseMessageData {
   messageId: number;
