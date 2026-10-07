@@ -117,6 +117,7 @@ export interface ViewSessionResponse{
     data: {
         nickname : string;
         counselNo : number;
+        counselId : number;
         sessionRound : number;
         client: ClientInfo;
         duration : number;
