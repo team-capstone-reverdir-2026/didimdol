@@ -44,10 +44,11 @@ public class DataSeeder implements ApplicationRunner {
     }
 
     private void seedClient(Client seed) {
-        if (clientRepository.existsByName(seed.getName())) {
-            return;
-        }
-        log.info("Seeding client: {}", seed.getName());
-        clientRepository.save(seed);
+        clientRepository.findByName(seed.getName()).ifPresentOrElse(
+                existing -> existing.syncFromSeed(seed),   // 더티체킹으로 UPDATE
+                () -> {
+                    log.info("Seeding client: {}", seed.getName());
+                    clientRepository.save(seed);
+                });
     }
 }

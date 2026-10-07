@@ -69,12 +69,16 @@ public class Client extends BaseTimeEntity {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String speechQuirks;
 
+    /** 말투 예시 발화 (프롬프트 [말투 예시]로 들어감) */
+    @Column(columnDefinition = "TEXT")
+    private String speechExamples;
+
     @Builder
     private Client(PersonaType personaType, String name, String gender, int age, String job,
                    String imageUrl, String referralReason, String problemArea,
                    String counselingReason, String familyBackground, String socialRelationships,
                    String recentEvents, String growthHistory, String undisclosedCore,
-                   String speechQuirks) {
+                   String speechQuirks, String speechExamples) {
         this.personaType = personaType;
         this.name = name;
         this.gender = gender;
@@ -90,5 +94,20 @@ public class Client extends BaseTimeEntity {
         this.growthHistory = growthHistory;
         this.undisclosedCore = undisclosedCore;
         this.speechQuirks = speechQuirks;
+        this.speechExamples = speechExamples;
+    }
+
+    /** 시드(소스 코드)가 기준값이므로 서사/말투 설정 변경을 기존 행에 반영한다 */
+    public void syncFromSeed(Client seed) {
+        this.referralReason = seed.referralReason;
+        this.problemArea = seed.problemArea;
+        this.counselingReason = seed.counselingReason;
+        this.familyBackground = seed.familyBackground;
+        this.socialRelationships = seed.socialRelationships;
+        this.recentEvents = seed.recentEvents;
+        this.growthHistory = seed.growthHistory;
+        this.undisclosedCore = seed.undisclosedCore;
+        this.speechQuirks = seed.speechQuirks;
+        this.speechExamples = seed.speechExamples;
     }
 }

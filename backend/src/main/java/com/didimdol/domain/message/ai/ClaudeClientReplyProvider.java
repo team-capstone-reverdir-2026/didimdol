@@ -17,6 +17,7 @@ public class ClaudeClientReplyProvider implements ClientReplyProvider {
 
     @Override
     public void stream(Long sessionId, Consumer<String> onToken) {
+        contextLoader.awaitPreviousMemory(sessionId);
         ReplyContext context = contextLoader.load(sessionId);
         anthropicClient.streamText(context.systemPrompt(), context.turns(), onToken);
     }

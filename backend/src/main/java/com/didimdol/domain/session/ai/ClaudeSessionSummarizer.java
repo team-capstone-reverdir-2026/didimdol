@@ -3,8 +3,10 @@ package com.didimdol.domain.session.ai;
 import com.didimdol.domain.message.entity.Message;
 import com.didimdol.domain.message.enums.Speaker;
 import com.didimdol.domain.message.repository.MessageRepository;
+import com.didimdol.domain.persona.entity.PersonaMemory;
 import com.didimdol.domain.persona.enums.DisclosureStage;
 import com.didimdol.domain.persona.enums.ImpressionDirection;
+import com.didimdol.domain.persona.repository.PersonaMemoryRepository;
 import com.didimdol.global.ai.AnthropicClient;
 import com.didimdol.global.ai.ChatTurn;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -35,7 +37,7 @@ public class ClaudeSessionSummarizer implements SessionSummarizer {
               "counselorImpressionDirection": "IMPROVED | SAME | WORSENED",
               "counselorImpressionReason": "내담자가 상담자에게 받은 인상이 그렇게 변한 이유 (1~2문장)",
               "emotionalArcSummary": "내담자 감정이 회기 동안 어떻게 흘렀는지 (1~2문장)",
-              "carryForwardText": "다음 회기에서 내담자가 기억하고 있어야 할 내용. 내담자 1인칭 시점의 기억 메모, 3~6문장, 아래 규칙 준수",
+              "carryForwardText": "다음 회기에서 내담자가 기억하고 있어야 할 내용. 내담자 1인칭 시점의 기억 메모, 4~8문장, 아래 규칙 준수",
               "aiSummary": "상담자(수련생)가 읽을 이번 회기 총평 (3~4문장, 존댓말)",
               "aiAdvice": "상담자(수련생)에게 주는 한 줄 조언 (1문장, 존댓말)"
             }
@@ -45,10 +47,13 @@ public class ClaudeSessionSummarizer implements SessionSummarizer {
             - 축어록에 없는 사실을 지어내지 마라. 내담자가 실제로 한 말만 disclosedTopics 와 carryForwardText 에 쓴다.
             - carryForwardText 에는 undisclosedCoreHint 의 내용을 절대 넣지 마라. 말하지 않은 것을 기억으로 만들면 안 된다.
             - carryForwardText 에는 상담자가 어떤 태도였는지(예: 재촉했다, 잘 들어줬다)와 그로 인한 내담자의 느낌을 포함하라.
+            - [직전까지의 기억]이 주어지면 carryForwardText 는 그 기억과 이번 회기 내용을 합쳐서 누적해 써라. 이전 회기에서 있었던 일을 빠뜨리지 마라. disclosedTopics 도 이전 주제를 포함해 누적한다.
+            - disclosureStage 는 [직전까지의 기억]의 단계보다 낮출 수 없다. 이번 회기에서 더 열렸을 때만 올린다.
             - 모든 값은 한국어. 감정/지문 태그 문법([EMOTION:...] 등)은 쓰지 마라.
             """;
 
     private final MessageRepository messageRepository;
+    private final PersonaMemoryRepository memoryRepository;
     private final AnthropicClient anthropicClient;
     private final JsonMapper jsonMapper = JsonMapper.builder().build();
 
@@ -57,9 +62,19 @@ public class ClaudeSessionSummarizer implements SessionSummarizer {
         List<Message> messages = messageRepository.findBySessionIdOrderBySeqAsc(sessionId);
         String transcript = toTranscript(messages);
 
+        PersonaMemory previous = memoryRepository.findPreviousOf(sessionId).orElse(null);
+        StringBuilder user = new StringBuilder();
+        if (previous != null) {
+            user.append("[직전까지의 기억]\n")
+                    .append("공개 단계: ").append(previous.getDisclosureStage().name()).append('\n')
+                    .append("이미 말한 주제:\n").append(nullToEmpty(previous.getDisclosedTopics())).append('\n')
+                    .append("기억 메모: ").append(previous.getCarryForwardText()).append("\n\n");
+        }
+        user.append("[이번 회기 축어록]\n").append(transcript);
+
         String raw = anthropicClient.complete(SYSTEM_PROMPT,
-                List.of(new ChatTurn("user", "[축어록]\n" + transcript)), MAX_TOKENS);
-        return parse(raw);
+                List.of(new ChatTurn("user", user.toString())), MAX_TOKENS);
+        return enforceMonotonic(parse(raw), previous);
     }
 
     private String toTranscript(List<Message> messages) {
@@ -79,6 +94,29 @@ public class ClaudeSessionSummarizer implements SessionSummarizer {
             }
         }
         return sb.toString();
+    }
+
+    /** 모델이 단계를 낮추거나 이전 주제를 빠뜨려도 코드에서 보정한다 */
+    private SessionSummary enforceMonotonic(SessionSummary s, PersonaMemory previous) {
+        if (previous == null) {
+            return s;
+        }
+        DisclosureStage stage = s.disclosureStage().ordinal() < previous.getDisclosureStage().ordinal()
+                ? previous.getDisclosureStage() : s.disclosureStage();
+        java.util.LinkedHashSet<String> topics = new java.util.LinkedHashSet<>();
+        for (String t : nullToEmpty(previous.getDisclosedTopics()).split("\n")) {
+            if (!t.isBlank()) {
+                topics.add(t.strip());
+            }
+        }
+        topics.addAll(s.disclosedTopics());
+        return new SessionSummary(stage, List.copyOf(topics), s.undisclosedCoreHint(),
+                s.counselorImpressionDirection(), s.counselorImpressionReason(), s.emotionalArcSummary(),
+                s.carryForwardText(), s.aiSummary(), s.aiAdvice());
+    }
+
+    private static String nullToEmpty(String v) {
+        return v == null ? "" : v;
     }
 
     SessionSummary parse(String raw) {
