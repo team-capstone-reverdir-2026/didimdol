@@ -41,14 +41,11 @@ function format(total: number) {
 }
 
 export function Session() {
-  const { counselId = '', clientId = '' } = useParams<{ counselId?: string; clientId: string }>();
+  const { counselId = '', counselNo = '', sessionRound = '', clientId = '' } = useParams<{ counselId?: string; counselNo?: string; sessionRound?: string; clientId: string }>();
   const navigate = useNavigate();
 
   const [sessionId, setSessionId] = useState<number>(0);
   const [sseTicket, setSseTicket] = useState<string>('');
-  const [counselNo, setCounselNo] = useState<number>(0);
-  const [sessionRound, setSessionRound] = useState<number>(0);
-  const [nickname, setNickname] = useState<string>('');
   const [clientDetail, setClientDetail] = useState<ViewClientResponse['data'] | null>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -97,12 +94,12 @@ export function Session() {
     if (isCompleted) setFinished(true);
   }, [isCompleted]);
 
-  // 타이머
+  // 타이머 — 첫 발화로 세션이 만들어진 뒤에만 감소
   useEffect(() => {
-    if (finished) return;
+    if (finished || !sessionId) return;
     const id = window.setInterval(() => setRemaining(r => Math.max(0, r - 1)), 1000);
     return () => window.clearInterval(id);
-  }, [finished]);
+  }, [finished, sessionId]);
 
   // 스크롤
   useEffect(() => {
@@ -124,9 +121,6 @@ export function Session() {
         const d = res.data;
         setSessionId(d.sessionId);
         setSseTicket(d.sseTicket);
-        setCounselNo(d.counselNo);
-        setSessionRound(d.sessionRound);
-        setNickname(d.nickname);
         if (d.previousMemo) setMemo(d.previousMemo);
       }
       else {
@@ -134,9 +128,6 @@ export function Session() {
         const d = res.data;
         setSessionId(d.sessionId);
         setSseTicket(d.sseTicket);
-        setCounselNo(d.counselNo);
-        setSessionRound(d.sessionRound);
-        setNickname(d.nickname);
         if (d.previousMemo) setMemo(d.previousMemo);
       }
     } else {
@@ -191,7 +182,7 @@ export function Session() {
               타이머 {format(remaining)}
             </span>
           </div>
-          <span className="text-sm font-semibold text-ink-soft">{nickname} 상담자님</span>
+          <span className="text-sm font-semibold text-ink-soft">{clientDetail?.nickname} 상담자님</span>
         </header>
 
         <div className="flex min-h-0 flex-1">
@@ -417,6 +408,7 @@ function PanelButton({
   return (
     <button
       type="button"
+      data-panel-toggle
       onClick={onClick}
       className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors duration-150 ease-out ${
         active ? 'bg-brand-600 text-white' : 'text-ink-soft hover:bg-brand-50 hover:text-brand-700'
@@ -437,6 +429,7 @@ function IconOnly({
   return (
     <button
       type="button"
+      data-panel-toggle
       aria-label={label}
       onClick={onClick}
       className="grid h-12 w-12 place-items-center rounded-full border border-line text-ink-soft transition-colors duration-150 ease-out hover:bg-brand-50 hover:text-brand-700">
