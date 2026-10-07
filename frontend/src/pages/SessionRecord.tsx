@@ -25,7 +25,7 @@ function formatDate(iso: string) {
 function formatDuration(seconds: number) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
-  return s > 0 ? `${m}분 ${s}초` : `${m}분`;
+  return `${m}분 ${s}초`;
 }
 
 export function SessionRecord() {
@@ -158,7 +158,7 @@ export function SessionRecord() {
         </Link>
         <button
           type="button"
-          onClick={() => navigate(`/session/${clientDetail.clientId}`)}
+          onClick={() => navigate(`/session/${session.counselId}/${clientDetail.clientId}`)}
           className="inline-flex h-12 items-center gap-2 rounded-full bg-brand-600 px-8 text-sm font-bold text-white shadow-glow transition-colors duration-150 ease-out hover:bg-brand-700">
           다음 회기 진행하기
           <ArrowRightIcon className="h-4 w-4" />

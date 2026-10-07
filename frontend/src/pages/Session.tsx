@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ClipboardListIcon, NotebookPenIcon, SendIcon } from 'lucide-react';
-import { makeCounsels, sessionMessage, sessionComplete, viewMemo, type ChatMessage } from '../api/counsel';
+import { makeCounsels, nextCounsels, sessionMessage, sessionComplete, viewMemo, type ChatMessage } from '../api/counsel';
 import { viewClient, type ViewClientResponse } from '../api/clients';
 import { formatTag } from '../utils/tags';
 import { Logo } from '../components/Logo';
@@ -41,7 +41,7 @@ function format(total: number) {
 }
 
 export function Session() {
-  const { clientId = '' } = useParams();
+  const { counselId = '', clientId = '' } = useParams<{ counselId?: string; clientId: string }>();
   const navigate = useNavigate();
 
   const [sessionId, setSessionId] = useState<number>(0);
@@ -119,14 +119,26 @@ export function Session() {
     if (!sessionId) {
       // 첫 메시지 → initialMessage로 makeCounsels 호출
       const startAt = new Date().toISOString();
-      const res = await makeCounsels({ clientId: Number(clientId), initialMessage: text, startAt });
-      const d = res.data;
-      setSessionId(d.sessionId);
-      setSseTicket(d.sseTicket);
-      setCounselNo(d.counselNo);
-      setSessionRound(d.sessionRound);
-      setNickname(d.nickname);
-      if (d.previousMemo) setMemo(d.previousMemo);
+      if (counselId) {
+        const res = await nextCounsels(Number(counselId), { initialMessage: text, startAt });
+        const d = res.data;
+        setSessionId(d.sessionId);
+        setSseTicket(d.sseTicket);
+        setCounselNo(d.counselNo);
+        setSessionRound(d.sessionRound);
+        setNickname(d.nickname);
+        if (d.previousMemo) setMemo(d.previousMemo);
+      }
+      else {
+        const res = await makeCounsels({ clientId: Number(clientId), initialMessage: text, startAt });
+        const d = res.data;
+        setSessionId(d.sessionId);
+        setSseTicket(d.sseTicket);
+        setCounselNo(d.counselNo);
+        setSessionRound(d.sessionRound);
+        setNickname(d.nickname);
+        if (d.previousMemo) setMemo(d.previousMemo);
+      }
     } else {
       // 이후 메시지 → sessionMessage 호출
       await sessionMessage(sessionId, { message: text });
