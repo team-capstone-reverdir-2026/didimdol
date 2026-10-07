@@ -16,6 +16,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.dao.DataIntegrityViolationException;
 
 @Slf4j
@@ -98,6 +99,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(ErrorCode.DUPLICATE_REQUEST.getStatus())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(ApiResponse.fail(ErrorCode.DUPLICATE_REQUEST.getMessage()));
+    }
+
+    // SSE 클라이언트가 먼저 끊긴 경우 (탭 닫기 등): 정상 상황이므로 응답을 쓰지 않고 조용히 넘어간다
+    @ExceptionHandler(AsyncRequestNotUsableException.class)
+    public void handleClientDisconnected(AsyncRequestNotUsableException e) {
+        log.debug("SSE client disconnected: {}", e.getMessage());
     }
 
     // 예상치 못한 서버 오류
