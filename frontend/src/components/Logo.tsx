@@ -1,5 +1,5 @@
 import logo from '../assets/logo.png';
-import mascot from '../assets/mascot.jpg';
+import mascot from '../assets/mascot.png';
 
 export const MASCOT = mascot;
 export const LOGO_SRC = logo;
