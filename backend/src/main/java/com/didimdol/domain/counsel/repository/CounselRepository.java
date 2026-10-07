@@ -1,7 +1,7 @@
 package com.didimdol.domain.counsel.repository;
 
 import com.didimdol.domain.counsel.entity.Counsel;
-import io.lettuce.core.dynamic.annotation.Param;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
