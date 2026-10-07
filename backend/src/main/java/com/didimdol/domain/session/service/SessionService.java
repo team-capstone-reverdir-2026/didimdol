@@ -85,6 +85,7 @@ public class SessionService {
 
         return new SessionDetailResponse(
                 counsel.getMember().getNickname(),
+                counsel.getId(),
                 counsel.getCounselNo(),
                 session.getSessionRound(),
                 SessionClientResponse.from(client),

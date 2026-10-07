@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 public record SessionDetailResponse(
         String nickname,
+        Long counselId,
         int counselNo,
         int sessionRound,
         SessionClientResponse client,
