@@ -9,10 +9,20 @@ import { History } from './pages/History';
 import { SessionRecord } from './pages/SessionRecord';
 import client from './api/client';
 import { setupInterceptors } from './api/interceptors';
+import { scheduleSilentRefresh } from './api/auth';
 
 setupInterceptors(client, () => {
   window.location.href = '/';
 });
+
+const refreshToken = localStorage.getItem('refreshToken');
+const expiresAt = localStorage.getItem('expiresAt');
+if (refreshToken && expiresAt) {
+  const remainingSec = Math.floor(
+    (new Date(expiresAt).getTime() - Date.now()) / 1000
+  );
+  scheduleSilentRefresh(remainingSec);
+}
 
 export default function App() {
   return (
