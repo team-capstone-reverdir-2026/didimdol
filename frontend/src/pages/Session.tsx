@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ClipboardListIcon, NotebookPenIcon, SendIcon } from 'lucide-react';
+import { ClipboardListIcon, LogOutIcon, NotebookPenIcon, SendIcon } from 'lucide-react';
 import { makeCounsels, nextCounsels, sessionMessage, sessionComplete, viewMemo, type ChatMessage } from '../api/counsel';
 import { viewClient, type ViewClientResponse } from '../api/clients';
 import { formatTag } from '../utils/tags';
@@ -11,7 +11,7 @@ import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MemoPanel } from '../components/MemoPanel';
 import { useCounselStream } from '../hooks/useCounselStream';
-import MASCOT from '../assets/mascot.jpg';
+import MASCOT from '../assets/mascot.png';
 import manNeutral from '../assets/ljh/man_neutral.png';
 import manHappy from '../assets/ljh/man_happy.png';
 import manSad from '../assets/ljh/man_sad.png';
@@ -53,6 +53,7 @@ export function Session() {
   const [remaining, setRemaining] = useState(30 * 60);
   const [panel, setPanel] = useState<'intake' | 'memo' | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const [finished, setFinished] = useState(false);
   const [thinking, setThinking] = useState(false);
   const [memo, setMemo] = useState('');
@@ -167,12 +168,26 @@ export function Session() {
             label="상담 메모"
             active={panel === 'memo'}
             onClick={() => setPanel(panel === 'memo' ? null : 'memo')} />
+          <button
+            type="button"
+            onClick={() => setLeaving(true)}
+            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-ink-soft transition-colors duration-150 ease-out hover:bg-brand-50 hover:text-danger">
+            <LogOutIcon className="h-4 w-4" />
+            나가기
+          </button>
         </div>
       </aside>
 
       <div className="relative flex min-w-0 flex-1 flex-col">
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-line bg-white px-8">
           <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setLeaving(true)}
+              className="flex h-8 items-center gap-1.5 rounded-full border border-line px-3 text-xs font-semibold text-ink-soft transition-colors duration-150 ease-out hover:border-danger hover:text-danger lg:hidden">
+              <LogOutIcon className="h-3.5 w-3.5" />
+              나가기
+            </button>
             <span className="rounded-full bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700">
               {counselNo}번 상담 · {sessionRound}회기
             </span>
@@ -185,23 +200,7 @@ export function Session() {
           <span className="text-sm font-semibold text-ink-soft">{clientDetail?.nickname} 상담자님</span>
         </header>
 
-        <div className="flex min-h-0 flex-1">
-          <div className="hidden w-[20rem] shrink-0 flex-col items-center justify-end border-r border-line bg-white px-6 pb-8 xl:flex">
-            {clientDetail?.imageUrl && (
-              <img
-                src={clientDetail.imageUrl}
-                alt={`${clientDetail.clientName} 내담자`}
-                className="w-full rounded-2xl object-cover" />
-            )}
-            <div className="mt-5 w-full text-center">
-              <p className="text-lg font-bold text-ink">{clientDetail?.clientName}</p>
-              <div className="mt-3 flex flex-wrap justify-center gap-1.5">
-                {clientDetail?.tags.map(t => <Tag key={t}>{formatTag(t)}</Tag>)}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             <div className="relative min-h-0 flex-1">
 
               {/* 스탠딩 이미지 */}
@@ -321,7 +320,6 @@ export function Session() {
                 </button>
               </div>
             </div>
-          </div>
         </div>
 
         <MemoPanel open={panel === 'intake'} onClose={() => setPanel(null)} title="내담자 설문지">
@@ -358,6 +356,15 @@ export function Session() {
         description="종료 후에는 발화를 추가할 수 없습니다."
         onCancel={() => setConfirming(false)}
         onConfirm={handleConfirmEnd} />
+
+      <ConfirmDialog
+        open={leaving}
+        title="정말 종료하시겠습니까?"
+        description="비정상적으로 상담이 종료되어 세션 정보가 저장되지 않습니다."
+        confirmLabel="확인"
+        destructive
+        onCancel={() => setLeaving(false)}
+        onConfirm={() => navigate('/home')} />
 
       <Modal open={finished} onClose={() => navigate('/home')} showClose={false} labelledBy="done-title">
         <div className="text-center">
