@@ -26,19 +26,40 @@ public class ReplyContextLoader {
     private final PersonaMemoryRepository memoryRepository;
     private final PromptAssembler promptAssembler;
 
+    /**
+     * 2~3회기의 첫 응답 직전, 직전 회기 요약(Job 2)이 아직 저장 중이면 잠시 기다린다.
+     * 첫 응답에서만 기다려서, 요약이 실패한 경우에도 매 턴 지연되지 않게 한다.
+     */
+    public void awaitPreviousMemory(Long sessionId) {
+        CounselSession session = sessionRepository.findById(sessionId).orElseThrow();
+        if (session.getSessionRound() <= 1
+                || messageRepository.findBySessionIdOrderBySeqAsc(sessionId).size() > 1) {
+            return;
+        }
+        long deadline = System.currentTimeMillis() + 25_000;
+        while (memoryRepository.findPreviousOf(sessionId).isEmpty()
+                && System.currentTimeMillis() < deadline) {
+            try {
+                Thread.sleep(1_000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
+    }
+
     @Transactional(readOnly = true)
     public ReplyContext load(Long sessionId) {
         CounselSession session = sessionRepository.findById(sessionId).orElseThrow();
         Client client = session.getCounsel().getClient();
 
-        String carryForward = session.getSessionRound() > 1
+        PersonaMemory previousMemory = session.getSessionRound() > 1
                 ? memoryRepository.findBySessionCounselIdAndSessionSessionRound(
                                 session.getCounsel().getId(), session.getSessionRound() - 1)
-                        .map(PersonaMemory::getCarryForwardText)
                         .orElse(null)
                 : null;
         String systemPrompt = promptAssembler.assemble(
-                client.getPersonaType(), client, session.getSessionRound(), carryForward);
+                client.getPersonaType(), client, session.getSessionRound(), previousMemory);
 
         List<Message> messages = messageRepository.findBySessionIdOrderBySeqAsc(sessionId);
         return new ReplyContext(systemPrompt, toTurns(messages));

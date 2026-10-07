@@ -1,7 +1,9 @@
 package com.didimdol.domain.message.ai;
 
 import com.didimdol.domain.client.entity.Client;
+import com.didimdol.domain.persona.entity.PersonaMemory;
 import com.didimdol.domain.persona.entity.PersonaType;
+import com.didimdol.domain.persona.enums.DisclosureStage;
 import com.didimdol.domain.persona.enums.PersonaTypeCode;
 import org.springframework.stereotype.Component;
 
@@ -21,13 +23,13 @@ public class PromptAssembler {
             X는 NEUTRAL, HAPPY, SAD, ANGRY 중 하나.
             Y는 NONE, SILENCE, RESISTANCE, CRYING, LAUGHING 중 하나이며, 해당 사항이 없으면 NONE으로 쓴다. SILENCE는 응답 안에 실제로 (침묵 n초) 표현이 포함된 경우에만 사용한다.
             이 지시문에 쓰인 X, Y는 값의 종류를 설명하기 위한 자리표시자이다. 응답에는 "[EMOTION:X|CUE:Y]"라는 문자열을 그대로 출력하지 말고, 반드시 실제 값으로 치환한 태그를 한 번만 출력한다.
-            태그 다음 줄부터 대사만 작성한다. 비언어적 정보가 대사만으로 전달되지 않을 때에 한해, 짧은 소리·침묵 표기만 괄호로 쓸 수 있다. 허용 표기는 (침묵 n초), (한숨), (웃음), (울먹임), (흐느낌), (목소리가 떨린다), (말이 빨라진다)뿐이며, 대부분의 응답에는 괄호를 쓰지 않는다. 1회 응답에 최대 1개까지만 쓴다. 표정, 시선, 몸짓, 동작 묘사와 내면 서술은 쓰지 않는다. 말이 끊기거나 멈추는 순간은 항상 (침묵 n초) 형태로만 쓰고 '잠깐 멈춤' 같은 다른 표현은 쓰지 않는다. CUE 대응: (침묵 n초)는 SILENCE, (울먹임)·(흐느낌)은 CRYING, (웃음)은 LAUGHING.
+            태그 다음 줄부터 대사만 작성한다. 비언어적 정보가 대사만으로 전달되지 않을 때에 한해, 상담 축어록의 전사 기호처럼 짧은 소리·침묵·목소리 변화만 괄호로 쓸 수 있다. 허용 표기는 (침묵 n초), (한숨), (웃음), (짧게 웃는다), (작게 웃으며), (울먹임), (목소리가 낮아진다), (목소리가 밝아진다), (목소리가 작아진다), (말이 빨라진다), (숨을 고르며), (말을 아낀다)뿐이다. 대부분의 응답에는 괄호를 쓰지 않으며, 쓰더라도 1회 응답에 최대 1개까지만 쓴다. 표정, 시선, 몸짓, 동작 묘사와 내면 서술은 쓰지 않는다. 말이 끊기거나 멈추는 순간은 항상 (침묵 n초) 형태로만 쓰고 다른 표현은 쓰지 않는다. CUE 대응: (침묵 n초)는 SILENCE, (울먹임)은 CRYING, (웃음)·(짧게 웃는다)·(작게 웃으며)는 LAUGHING.
             1회 응답은 2~4문장을 기본으로 하되, 정서가 고양되거나 저항이 강한 구간은 예외적으로 길어질 수 있다.
             존댓말을 유지한다. 1회 응답 500자 상한.
             """;
 
-    /** carryForwardText: 직전 회기 요약 (1회기는 null) */
-    public String assemble(PersonaType persona, Client client, int sessionRound, String carryForwardText) {
+    /** previousMemory: 직전 회기 종료 시 저장된 기억 (1회기이거나 아직 없으면 null) */
+    public String assemble(PersonaType persona, Client client, int sessionRound, PersonaMemory previousMemory) {
         StringBuilder sb = new StringBuilder();
 
         // [A] 역할 고정 지시문
@@ -58,23 +60,54 @@ public class PromptAssembler {
         line(sb, "미공개 핵심(공개 3단계에서만 드러남)", client.getUndisclosedCore());
         line(sb, "개인 말투 특징", client.getSpeechQuirks());
         sb.append('\n');
+        section(sb, "[말투 예시]", client.getSpeechExamples());
 
         // [D] 이전 회기 정보
-        sb.append("[이전 회기 정보]\n").append(previousInfo(sessionRound, carryForwardText)).append("\n\n");
+        sb.append("[이전 회기 정보]\n").append(previousInfo(sessionRound, previousMemory)).append("\n\n");
 
         // [E] 출력 형식 최종 규칙
         sb.append(OUTPUT_FORMAT);
         return sb.toString();
     }
 
-    private String previousInfo(int sessionRound, String carryForwardText) {
+    private String previousInfo(int sessionRound, PersonaMemory memory) {
         if (sessionRound == 1) {
             return "없음 (1회기)";
         }
-        if (carryForwardText == null || carryForwardText.isBlank()) {
+        if (memory == null) {
             return "이전 회기 요약 정보가 없다.";
         }
-        return carryForwardText.strip();
+        StringBuilder sb = new StringBuilder();
+        sb.append("현재 공개 단계: ").append(stageLabel(memory.getDisclosureStage())).append('\n');
+        if (memory.getDisclosedTopics() != null && !memory.getDisclosedTopics().isBlank()) {
+            sb.append("이미 말한 주제:\n");
+            for (String topic : memory.getDisclosedTopics().split("\n")) {
+                if (!topic.isBlank()) {
+                    sb.append("- ").append(topic.strip()).append('\n');
+                }
+            }
+        }
+        if (memory.getCounselorImpressionDirection() != null) {
+            sb.append("상담자에 대한 인상 변화: ").append(memory.getCounselorImpressionDirection().name());
+            if (memory.getCounselorImpressionReason() != null && !memory.getCounselorImpressionReason().isBlank()) {
+                sb.append(" (").append(memory.getCounselorImpressionReason().strip()).append(')');
+            }
+            sb.append('\n');
+        }
+        sb.append("기억:\n").append(memory.getCarryForwardText().strip()).append('\n');
+        sb.append("위에 없는 내용을 이미 말한 것처럼 행동하지 않는다. 공개 단계는 상담자의 반응에 따라 한 단계씩만 나아갈 수 있다.");
+        return sb.toString();
+    }
+
+    private String stageLabel(DisclosureStage stage) {
+        if (stage == null) {
+            return "표면적 진술";
+        }
+        return switch (stage) {
+            case SURFACE -> "1단계 (표면적 진술)";
+            case EVENT -> "2단계 (구체적 사건 진술)";
+            case CORE_EMOTION -> "3단계 (핵심 감정 진술)";
+        };
     }
 
     private String label(PersonaTypeCode type) {
