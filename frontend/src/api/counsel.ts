@@ -121,8 +121,8 @@ export interface ViewSessionResponse{
         sessionRound : number;
         client: ClientInfo;
         duration : number;
-        aiSummary : string;
-        aiAdvice : string;
+        aiSummary : string | null;
+        aiAdvice : string | null;
         transcriptId : number;
         reportId : number;
         createdAt : string;

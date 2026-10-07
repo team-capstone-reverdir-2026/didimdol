@@ -121,10 +121,14 @@ export function SessionRecord() {
           <SparklesIcon className="h-4 w-4" />
           <h2 className="text-xs font-bold tracking-wide">AI 요약</h2>
         </div>
-        <p className="mt-2.5 text-[1.05rem] font-medium leading-relaxed">{session.aiSummary}</p>
+        <p className="mt-2.5 text-[1.05rem] font-medium leading-relaxed">
+          {session.aiSummary ?? '요약본이 생성되고 있습니다. 잠시만 기다려 주세요.'}
+        </p>
         <hr className="my-6 border-white/20" />
         <h3 className="text-xs font-bold text-brand-200">AI 한 줄 조언</h3>
-        <p className="mt-2.5 text-[1.05rem] font-medium leading-relaxed">{session.aiAdvice}</p>
+        <p className="mt-2.5 text-[1.05rem] font-medium leading-relaxed">
+          {session.aiAdvice ?? '조언이 생성되고 있습니다. 잠시만 기다려 주세요'}
+        </p>
         <p className="mt-5 text-xs leading-relaxed text-brand-200">
           AI 요약과 조언은 참고용 관찰 기록이며, 슈퍼비전을 대신하지 않습니다.
         </p>
