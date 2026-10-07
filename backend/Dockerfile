@@ -11,7 +11,7 @@ RUN ./gradlew --no-daemon bootJar -x test
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 ENV TZ=Asia/Seoul \
-    JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Seoul -XX:MaxRAMPercentage=75" \
+    JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Seoul -XX:MaxRAMPercentage=70 -XX:+UseSerialGC -Xss512k" \
     SPRING_PROFILES_ACTIVE=prod
 COPY --from=build /app/build/libs/*.jar app.jar
 EXPOSE 8080
