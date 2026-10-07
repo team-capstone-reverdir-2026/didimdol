@@ -17,6 +17,8 @@ import org.springframework.stereotype.Component;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Component
@@ -28,16 +30,16 @@ public class ClaudeSessionSummarizer implements SessionSummarizer {
 
     private static final String SYSTEM_PROMPT = """
             너는 상담 수련 시뮬레이션의 기록 담당자다. 아래 축어록은 상담자(수련생)와 AI 내담자의 한 회기 대화다.
-            축어록을 읽고 반드시 아래 JSON 객체 하나만 출력하라. 설명, 마크다운, 코드블록은 쓰지 마라.
+            축어록을 읽고 반드시 아래 JSON 객체 하나만 출력하라. 설명, 마크다운, 코드블록은 쓰지 마라. 필드는 아래 순서대로 쓴다(앞의 필드가 더 중요하다).
 
             {
               "disclosureStage": "SURFACE | EVENT | CORE_EMOTION",
-              "disclosedTopics": ["내담자가 이번 회기에 실제로 말한 주제", "..."],
-              "undisclosedCoreHint": "내담자가 아직 말하지 않았지만 대화 흐름상 숨기고 있는 핵심 (없으면 빈 문자열)",
+              "carryForwardText": "다음 회기에서 내담자가 기억하고 있어야 할 내용. 내담자 1인칭 시점의 기억 메모, 4~8문장, 아래 규칙 준수",
               "counselorImpressionDirection": "IMPROVED | SAME | WORSENED",
               "counselorImpressionReason": "내담자가 상담자에게 받은 인상이 그렇게 변한 이유 (1~2문장)",
+              "disclosedTopics": ["내담자가 이번 회기에 실제로 말한 주제", "..."],
+              "undisclosedCoreHint": "내담자가 아직 말하지 않았지만 대화 흐름상 숨기고 있는 핵심 (없으면 빈 문자열)",
               "emotionalArcSummary": "내담자 감정이 회기 동안 어떻게 흘렀는지 (1~2문장)",
-              "carryForwardText": "다음 회기에서 내담자가 기억하고 있어야 할 내용. 내담자 1인칭 시점의 기억 메모, 4~8문장, 아래 규칙 준수",
               "aiSummary": "상담자(수련생)가 읽을 이번 회기 총평 (3~4문장, 존댓말)",
               "aiAdvice": "상담자(수련생)에게 주는 한 줄 조언 (1문장, 존댓말)"
             }
@@ -122,8 +124,20 @@ public class ClaudeSessionSummarizer implements SessionSummarizer {
     }
 
     SessionSummary parse(String raw) {
-        String json = extractJson(raw);
-        Draft d = jsonMapper.readValue(json, Draft.class);
+        try {
+            return toSummary(jsonMapper.readValue(extractJson(raw), Draft.class));
+        } catch (Exception strictFailure) {
+            // 출력 한도에 걸려 JSON 이 중간에 잘린 경우: 온전히 쓰인 필드만 건져서 저장한다
+            Draft salvaged = salvage(raw);
+            if (salvaged == null) {
+                throw new IllegalStateException("요약 응답을 해석하지 못했습니다: " + strictFailure.getMessage(), strictFailure);
+            }
+            log.warn("요약 JSON 이 불완전해 부분 복구했습니다 (총평/조언 누락 가능): {}", strictFailure.getMessage());
+            return toSummary(salvaged);
+        }
+    }
+
+    private SessionSummary toSummary(Draft d) {
         if (d.carryForwardText() == null || d.carryForwardText().isBlank()) {
             throw new IllegalStateException("요약 결과에 carryForwardText 가 없습니다.");
         }
@@ -137,6 +151,51 @@ public class ClaudeSessionSummarizer implements SessionSummarizer {
                 d.carryForwardText().strip(),
                 d.aiSummary(),
                 d.aiAdvice());
+    }
+
+    /** 닫는 따옴표/괄호까지 온전히 있는 필드만 정규식으로 추출한다. 핵심(기억 메모)이 없으면 null */
+    private Draft salvage(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String carry = quoted(raw, "carryForwardText");
+        if (carry == null || carry.isBlank()) {
+            return null;
+        }
+        return new Draft(
+                quoted(raw, "disclosureStage"),
+                topics(raw),
+                quoted(raw, "undisclosedCoreHint"),
+                quoted(raw, "counselorImpressionDirection"),
+                quoted(raw, "counselorImpressionReason"),
+                quoted(raw, "emotionalArcSummary"),
+                carry,
+                quoted(raw, "aiSummary"),
+                quoted(raw, "aiAdvice"));
+    }
+
+    private String quoted(String raw, String key) {
+        Matcher m = Pattern.compile("\"" + key + "\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"").matcher(raw);
+        if (!m.find()) {
+            return null;
+        }
+        try {
+            return jsonMapper.readValue("\"" + m.group(1) + "\"", String.class);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private List<String> topics(String raw) {
+        Matcher m = Pattern.compile("\"disclosedTopics\"\\s*:\\s*\\[((?:\\s*\"(?:[^\"\\\\]|\\\\.)*\"\\s*,?)*)\\s*\\]").matcher(raw);
+        if (!m.find()) {
+            return List.of();
+        }
+        try {
+            return List.of(jsonMapper.readValue("[" + m.group(1) + "]", String[].class));
+        } catch (Exception e) {
+            return List.of();
+        }
     }
 
     /** 모델이 코드펜스나 앞뒤 설명을 붙였을 때를 대비해 첫 '{' ~ 마지막 '}' 를 잘라낸다 */
