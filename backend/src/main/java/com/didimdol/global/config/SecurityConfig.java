@@ -43,7 +43,8 @@ public class SecurityConfig {
                                 "/api/auth/sign-up",
                                 "/api/auth/sign-in",
                                 "/api/auth/refresh",
-                                "/api/sessions/*/stream"
+                                "/api/sessions/*/stream",
+                                "/api/health"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(authenticationEntryPoint))
