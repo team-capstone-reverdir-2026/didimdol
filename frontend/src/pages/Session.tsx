@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ClipboardListIcon, LogOutIcon, NotebookPenIcon, SendIcon } from 'lucide-react';
@@ -57,7 +57,7 @@ export function Session() {
   const [finished, setFinished] = useState(false);
   const [thinking, setThinking] = useState(false);
   const [memo, setMemo] = useState('');
-  const endRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // 내담자 정보 로드 (세션 시작 전)
   useEffect(() => {
@@ -102,10 +102,16 @@ export function Session() {
     return () => window.clearInterval(id);
   }, [finished, sessionId]);
 
-  // 스크롤
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [messages, thinking]);
+  // 스트림 중에는 글자가 늘어나는 즉시 따라가고, 발화가 새로 생길 때만 부드럽게 내린다
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (aiContent) {
+      el.scrollTop = el.scrollHeight;
+      return;
+    }
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  }, [messages, thinking, aiContent]);
 
   const send = async () => {
     const text = draft.trim();
@@ -215,6 +221,7 @@ export function Session() {
               )}
 
               <div
+                ref={scrollRef}
                 className={`relative z-[2] h-full overflow-y-auto scroll-slim px-8 ${
                   standingImage
                     ? 'pt-[min(9rem,22%)] pb-8 sm:pl-[18rem] md:pl-[20rem] lg:pl-[22rem]'
@@ -224,7 +231,7 @@ export function Session() {
                   {messages.map(m => (
                     <li key={m.id} className={m.from === 'client' ? 'flex justify-start' : 'flex justify-end'}>
                       <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                        initial={m.from === 'client' ? false : { opacity: 0, y: 8, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
                         className={`relative px-5 py-4 text-[0.95rem] leading-relaxed ${
@@ -244,22 +251,18 @@ export function Session() {
                     </li>
                   ))}
 
-                  {/* 스트리밍 중인 AI 발화 */}
+                  {/* 스트리밍 중인 AI 발화 — 완료 시 같은 문장으로 교체되므로 퇴장 애니메이션을 두지 않는다 */}
+                  {aiContent && (
+                    <li className="flex justify-start">
+                      <div className={`relative px-5 py-4 text-[0.95rem] leading-relaxed rounded-2xl rounded-bl-md border border-line bg-white text-ink ${standingImage ? 'max-w-sm' : 'max-w-[80%] rounded-tl-md'}`}>
+                        {standingImage && (
+                          <span aria-hidden="true" className="absolute -left-[6px] top-6 h-3 w-3 rotate-45 border-b border-l border-line bg-white" />
+                        )}
+                        {aiContent}
+                      </div>
+                    </li>
+                  )}
                   <AnimatePresence>
-                    {aiContent && (
-                      <motion.li
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="flex justify-start">
-                        <div className={`relative px-5 py-4 text-[0.95rem] leading-relaxed rounded-2xl rounded-bl-md border border-line bg-white text-ink ${standingImage ? 'max-w-sm' : 'max-w-[80%] rounded-tl-md'}`}>
-                          {standingImage && (
-                            <span aria-hidden="true" className="absolute -left-[6px] top-6 h-3 w-3 rotate-45 border-b border-l border-line bg-white" />
-                          )}
-                          {aiContent}
-                        </div>
-                      </motion.li>
-                    )}
                     {thinking && !aiContent && (
                       <motion.li
                         initial={{ opacity: 0 }}
@@ -277,7 +280,6 @@ export function Session() {
                     )}
                   </AnimatePresence>
                 </ul>
-                <div ref={endRef} />
               </div>
             </div>
 
