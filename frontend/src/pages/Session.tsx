@@ -140,7 +140,7 @@ export function Session() {
         if (d.previousMemo) setMemo(d.previousMemo);
       }
     } else {
-      // 이후 메시지 → sessionMessage 호출
+      // 이후 메시지 → sessionMessage 호출함
       await sessionMessage(sessionId, { message: text });
     }
   };
