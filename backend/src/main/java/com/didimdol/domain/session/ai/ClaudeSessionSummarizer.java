@@ -24,7 +24,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ClaudeSessionSummarizer implements SessionSummarizer {
 
-    private static final int MAX_TOKENS = 1500;
+    private static final int MAX_TOKENS = 4000;
 
     private static final String SYSTEM_PROMPT = """
             너는 상담 수련 시뮬레이션의 기록 담당자다. 아래 축어록은 상담자(수련생)와 AI 내담자의 한 회기 대화다.
@@ -49,6 +49,8 @@ public class ClaudeSessionSummarizer implements SessionSummarizer {
             - carryForwardText 에는 상담자가 어떤 태도였는지(예: 재촉했다, 잘 들어줬다)와 그로 인한 내담자의 느낌을 포함하라.
             - [직전까지의 기억]이 주어지면 carryForwardText 는 그 기억과 이번 회기 내용을 합쳐서 누적해 써라. 이전 회기에서 있었던 일을 빠뜨리지 마라. disclosedTopics 도 이전 주제를 포함해 누적한다.
             - disclosureStage 는 [직전까지의 기억]의 단계보다 낮출 수 없다. 이번 회기에서 더 열렸을 때만 올린다.
+            - disclosedTopics 는 최대 12개, 각 항목 25자 이내의 짧은 구절로 쓰고, 비슷한 주제는 합쳐라. 사소한 일상(점심 메뉴 등)은 넣지 마라.
+            - carryForwardText 는 8문장 이내로 쓴다. aiSummary 는 4문장 이내, aiAdvice 는 1문장이다.
             - 모든 값은 한국어. 감정/지문 태그 문법([EMOTION:...] 등)은 쓰지 마라.
             """;
 
