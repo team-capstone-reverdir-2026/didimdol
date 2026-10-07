@@ -34,7 +34,7 @@ export default function App() {
 
         {/* 상담 진행 (전체 화면, AppLayout 없음) */}
         <Route path="/session/:clientId" element={<Session />} />
-        <Route path="/session/:counselId/:clientId" element={<Session />} />
+        <Route path="/session/:counselId/:counselNo/:sessionRound/:clientId" element={<Session />} />
 
         {/* 앱 페이지 (AppLayout 적용) */}
         <Route element={<AppLayout />}>

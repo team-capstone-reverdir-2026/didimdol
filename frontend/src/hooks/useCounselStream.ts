@@ -31,7 +31,8 @@ export function useCounselStream({ sessionId, sseTicket }: UseCounselStreamProps
     if (!sessionId || !sseTicket) return;
 
     //쿼리 파라미터에 ticket을 실어 다이렉트 전송 주소 생성
-    const url = `/api/sessions/${sessionId}/stream?ticket=${encodeURIComponent(sseTicket)}`;
+    const baseURL = import.meta.env.VITE_API_BASE_URL ?? '';
+    const url = `${baseURL}/api/sessions/${sessionId}/stream?ticket=${encodeURIComponent(sseTicket)}`;
     const eventSource = new EventSource(url);
 
     console.log('[SSE] 백엔드 스트림 서버와 연결을 시작합니다.');
