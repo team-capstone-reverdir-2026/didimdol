@@ -40,7 +40,7 @@ public class ClaudeSessionSummarizer implements SessionSummarizer {
               "disclosedTopics": ["내담자가 이번 회기에 실제로 말한 주제", "..."],
               "undisclosedCoreHint": "내담자가 아직 말하지 않았지만 대화 흐름상 숨기고 있는 핵심 (없으면 빈 문자열)",
               "emotionalArcSummary": "내담자 감정이 회기 동안 어떻게 흘렀는지 (1~2문장)",
-              "aiSummary": "상담자(수련생)가 읽을 이번 회기 총평 (3~4문장, 존댓말)",
+              "aiSummary": "상담자(수련생)가 읽을 이번 회기 총평 (3~4문장, 공백 포함 500자 이내, 존댓말)",
               "aiAdvice": "상담자(수련생)에게 주는 한 줄 조언 (1문장, 존댓말)"
             }
 
@@ -52,7 +52,7 @@ public class ClaudeSessionSummarizer implements SessionSummarizer {
             - [직전까지의 기억]이 주어지면 carryForwardText 는 그 기억과 이번 회기 내용을 합쳐서 누적해 써라. 이전 회기에서 있었던 일을 빠뜨리지 마라. disclosedTopics 도 이전 주제를 포함해 누적한다.
             - disclosureStage 는 [직전까지의 기억]의 단계보다 낮출 수 없다. 이번 회기에서 더 열렸을 때만 올린다.
             - disclosedTopics 는 최대 12개, 각 항목 25자 이내의 짧은 구절로 쓰고, 비슷한 주제는 합쳐라. 사소한 일상(점심 메뉴 등)은 넣지 마라.
-            - carryForwardText 는 8문장 이내로 쓴다. aiSummary 는 4문장 이내, aiAdvice 는 1문장이다.
+            - carryForwardText 는 8문장 이내로 쓴다. aiSummary 는 4문장 이내이면서 공백 포함 500자를 넘기지 마라. aiAdvice 는 1문장이다.
             - 모든 값은 한국어. 감정/지문 태그 문법([EMOTION:...] 등)은 쓰지 마라.
             """;
 
