@@ -40,4 +40,12 @@ public class CounselController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("다음 회기 생성 성공", response));
     }
+
+    @DeleteMapping("/{counselId}")
+    public ResponseEntity<ApiResponse<Void>> deleteCounsel(
+            @AuthenticationPrincipal Long memberId,
+            @PathVariable Long counselId) {
+        counselService.deleteCounsel(memberId, counselId);
+        return ResponseEntity.ok(ApiResponse.success("상담 삭제 성공"));
+    }
 }

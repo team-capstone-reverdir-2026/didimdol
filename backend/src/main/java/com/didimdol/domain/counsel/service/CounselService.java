@@ -18,6 +18,9 @@ import com.didimdol.domain.session.enums.SessionStatus;
 import com.didimdol.domain.session.repository.CounselSessionRepository;
 import com.didimdol.global.exception.BusinessException;
 import com.didimdol.global.exception.ErrorCode;
+import com.didimdol.domain.persona.repository.PersonaMemoryRepository;
+import com.didimdol.global.sse.SessionClosedPayload;
+import com.didimdol.global.sse.SseStreamRegistry;
 import com.didimdol.global.sse.SseTicketStore;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -39,6 +42,8 @@ public class CounselService {
     private final CounselSessionRepository counselSessionRepository;
     private final MessageRepository messageRepository;
     private final SseTicketStore sseTicketStore;
+    private final PersonaMemoryRepository personaMemoryRepository;
+    private final SseStreamRegistry sseStreamRegistry;
 
 
     @Transactional
@@ -134,5 +139,25 @@ public class CounselService {
                 last.getMemo(),
                 sseTicket,
                 LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
+    }
+
+    /** 상담 삭제: 본인 상담만, 하위 데이터(기억·메시지·회기)까지 함께 삭제 */
+    @Transactional
+    public void deleteCounsel(Long memberId, Long counselId) {
+        Counsel counsel = counselRepository.findById(counselId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.COUNSEL_NOT_FOUND));
+
+        if (!counsel.getMember().getId().equals(memberId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+
+        // 열려 있는 SSE 연결 정리
+        counselSessionRepository.findByCounselId(counselId)
+                .forEach(s -> sseStreamRegistry.close(s.getId(), new SessionClosedPayload("COUNSEL_DELETED")));
+
+        personaMemoryRepository.deleteAllByCounselId(counselId);
+        messageRepository.deleteAllByCounselId(counselId);
+        counselSessionRepository.deleteAllByCounselId(counselId);
+        counselRepository.delete(counsel);
     }
 }
