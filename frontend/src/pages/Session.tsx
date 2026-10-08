@@ -46,6 +46,7 @@ export function Session() {
 
   const [sessionId, setSessionId] = useState<number>(0);
   const [sseTicket, setSseTicket] = useState<string>('');
+  const [assignedCounselNo, setAssignedCounselNo] = useState<number | null>(null);
   const [clientDetail, setClientDetail] = useState<ViewClientResponse['data'] | null>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -78,6 +79,8 @@ export function Session() {
   });
 
   const standingImage = getClientStanding(Number(clientId), currentEmotion);
+  const displayRound = sessionRound || '1';
+  const displayCounselNo = counselNo || (assignedCounselNo != null ? String(assignedCounselNo) : '');
 
   // AI 문장 완성 시 messages에 추가
   useEffect(() => {
@@ -128,6 +131,7 @@ export function Session() {
         const d = res.data;
         setSessionId(d.sessionId);
         setSseTicket(d.sseTicket);
+        setAssignedCounselNo(d.counselNo);
         if (d.previousMemo) setMemo(d.previousMemo);
       }
       else {
@@ -135,6 +139,7 @@ export function Session() {
         const d = res.data;
         setSessionId(d.sessionId);
         setSseTicket(d.sseTicket);
+        setAssignedCounselNo(d.counselNo);
         if (d.previousMemo) setMemo(d.previousMemo);
       }
     } else {
@@ -161,7 +166,7 @@ export function Session() {
           <p className="mt-2 text-sm font-semibold text-ink">
             {clientDetail?.clientName ?? '—'} 내담자
           </p>
-          <p className="mt-1 text-xs text-ink-muted">{sessionRound}회기 · AI 시뮬레이션</p>
+          <p className="mt-1 text-xs text-ink-muted">{displayRound}회기 · AI 시뮬레이션</p>
         </div>
         <div className="mt-auto space-y-2">
           <PanelButton
@@ -195,7 +200,7 @@ export function Session() {
               나가기
             </button>
             <span className="rounded-full bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700">
-              {counselNo}번 상담 · {sessionRound}회기
+              {displayCounselNo ? `${displayCounselNo}번 상담 · ` : ''}{displayRound}회기
             </span>
             <span
               className="rounded-full bg-brand-600 px-3 py-1.5 text-xs font-bold tabular-nums text-white"
