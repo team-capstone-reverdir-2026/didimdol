@@ -2,6 +2,8 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { HomeIcon, LogOutIcon, MessagesSquareIcon, NotebookTextIcon } from 'lucide-react';
 import { Logo } from '../Logo';
 import { signOut, clearSilentRefresh } from '../../api/auth';
+import { ConfirmDialog } from '../ConfirmDialog';
+import { useState } from 'react';
 
 const nav = [
 { to: '/home', label: '홈', icon: HomeIcon },
@@ -11,6 +13,7 @@ const nav = [
 
 export function Sidebar() {
   const navigate = useNavigate();
+  const [logout, setLogout] = useState(false);
 
   return (
     <nav
@@ -50,7 +53,20 @@ export function Sidebar() {
 
       <button
         type="button"
-        onClick={async () => {
+        onClick={() => setLogout(true)}
+        className="mt-3 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-ink-muted transition-colors duration-150 ease-out hover:bg-brand-50 hover:text-brand-700">
+        <LogOutIcon className="h-[1.15rem] w-[1.15rem]" strokeWidth={2} />
+        로그아웃
+      </button>
+
+      <ConfirmDialog
+        open={logout}
+        title="로그아웃하시겠습니까?"
+        description="로그아웃 후에는 다시 로그인해야 합니다."
+        confirmLabel="확인"
+        destructive
+        onCancel={() => setLogout(false)}
+        onConfirm={async () => {
           const accessToken = localStorage.getItem('accessToken');
           if (accessToken) {
             await signOut({ accessToken }).catch(() => {});
@@ -59,11 +75,8 @@ export function Sidebar() {
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
           navigate('/');
-        }}
-        className="mt-3 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-ink-muted transition-colors duration-150 ease-out hover:bg-brand-50 hover:text-brand-700">
-        <LogOutIcon className="h-[1.15rem] w-[1.15rem]" strokeWidth={2} />
-        로그아웃
-      </button>
+        }} />
+
     </nav>);
 
 }
